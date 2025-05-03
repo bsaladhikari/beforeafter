@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Before & After Image Report Generator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Before & After Image Report Generator</h1>
+        <div id="sites-container">
+            <div class="site-section">
+                <div class="site-header">
+                    <input type="text" class="site-name" placeholder="Enter Site Name" autocapitalize="words">
+                    <button class="delete-site">×</button>
+                </div>
+                <div class="image-sections">
+                    <div class="before-section">
+                        <h2>Before Images</h2>
+                        <div class="image-grid" id="before-grid-1">
+                            <div class="image-upload-container">
+                                <input type="file" accept="image/*" capture="environment" class="image-upload">
+                                <button class="add-image">+ Add</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="after-section">
+                        <h2>After Images</h2>
+                        <div class="image-grid" id="after-grid-1">
+                            <div class="image-upload-container">
+                                <input type="file" accept="image/*" capture="environment" class="image-upload">
+                                <button class="add-image">+ Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="action-buttons">
+            <button id="add-site" class="add-site-btn">+ Add Another Site</button>
+            <button id="generate-all-pdf" class="generate-pdf">Generate PDF Report</button>
+        </div>
+    </div>
+
+    <!-- Upload Options Modal -->
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <h3>Choose Upload Option</h3>
+            <button class="modal-btn gallery-option">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M19,19H5V5H19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M13.96,12.29L11.21,15.83L9.25,13.47L6.5,17H17.5L13.96,12.29Z"/>
+                </svg>
+                Gallery
+            </button>
+            <button class="modal-btn camera-option">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M20,4H16.83L15,2H9L7.17,4H4A2,2 0 0,0 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6A2,2 0 0,0 20,4M20,18H4V6H8.05L9.88,4H14.12L15.95,6H20V18M12,7A5,5 0 0,0 7,12A5,5 0 0,0 12,17A5,5 0 0,0 17,12A5,5 0 0,0 12,7M12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15Z"/>
+                </svg>
+                Camera
+            </button>
+            <button class="modal-close">×</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

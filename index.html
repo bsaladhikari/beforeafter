@@ -3,47 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Before & After Image Report Generator</title>
+    <title>Before & After Image Report Generator - Create Professional Comparison Reports</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Create professional before and after image comparison reports. Perfect for construction, renovation, and project documentation. Generate PDF reports with ease.">
+    <meta name="keywords" content="before after images, image comparison, report generator, PDF report, construction documentation, renovation progress">
+    <meta name="author" content="Before & After Report Generator">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:title" content="Before & After Image Report Generator">
+    <meta property="og:description" content="Create professional before and after image comparison reports. Perfect for construction, renovation, and project documentation.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yourwebsite.com">
+    <meta property="og:image" content="https://yourwebsite.com/og-image.jpg">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Before & After Image Report Generator</h1>
-        <div id="sites-container">
-            <div class="site-section">
-                <div class="site-header">
-                    <input type="text" class="site-name" placeholder="Enter Site Name" autocapitalize="words">
-                    <button class="delete-site">×</button>
-                </div>
-                <div class="image-sections">
-                    <div class="before-section">
-                        <h2>Before Images</h2>
-                        <div class="image-grid" id="before-grid-1">
-                            <div class="image-upload-container">
-                                <input type="file" accept="image/*" capture="environment" class="image-upload">
-                                <button class="add-image">+ Add</button>
+        <header>
+            <h1>Before & After Image Report Generator</h1>
+            <p class="subtitle">Create professional comparison reports for your projects</p>
+        </header>
+        
+        <!-- Ad Container - Top -->
+        <div class="ad-container">
+            <!-- AdSense code will go here -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="YOUR-AD-CLIENT-ID"
+                 data-ad-slot="YOUR-AD-SLOT-ID"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+        </div>
+
+        <main>
+            <div id="sites-container">
+                <div class="site-section">
+                    <div class="site-header">
+                        <input type="text" class="site-name" placeholder="Enter Site Name" autocapitalize="words">
+                        <button class="delete-site">×</button>
+                    </div>
+                    <div class="image-sections">
+                        <div class="before-section">
+                            <h2>Before Images</h2>
+                            <div class="image-grid" id="before-grid-1">
+                                <div class="image-upload-container">
+                                    <input type="file" accept="image/*" capture="environment" class="image-upload">
+                                    <button class="add-image">+ Add</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="after-section">
-                        <h2>After Images</h2>
-                        <div class="image-grid" id="after-grid-1">
-                            <div class="image-upload-container">
-                                <input type="file" accept="image/*" capture="environment" class="image-upload">
-                                <button class="add-image">+ Add</button>
+                        <div class="after-section">
+                            <h2>After Images</h2>
+                            <div class="image-grid" id="after-grid-1">
+                                <div class="image-upload-container">
+                                    <input type="file" accept="image/*" capture="environment" class="image-upload">
+                                    <button class="add-image">+ Add</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="action-buttons">
-            <button id="add-site" class="add-site-btn">+ Add Another Site</button>
-            <button id="generate-all-pdf" class="generate-pdf">Generate PDF Report</button>
-            <button id="preview-pdf" class="preview-pdf">Preview PDF</button>
-        </div>
-        <div id="pdf-preview-area" style="margin-top: 20px;"></div>
+            <div class="action-buttons">
+                <button id="add-site" class="add-site-btn">+ Add Another Site</button>
+                <button id="generate-all-pdf" class="generate-pdf">Generate PDF Report</button>
+                <button id="preview-pdf" class="preview-pdf">Preview PDF</button>
+            </div>
+            <div id="pdf-preview-area" style="margin-top: 20px;"></div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Before & After Report Generator. All rights reserved.</p>
+            <nav>
+                <a href="/privacy-policy.html">Privacy Policy</a> |
+                <a href="/terms-of-service.html">Terms of Service</a> |
+                <a href="/contact.html">Contact</a>
+            </nav>
+            <p class="powered-by">Powered by BeforeAfterTool</p>
+        </footer>
     </div>
 
     <div class="modal" id="pdfNameModal">
@@ -58,5 +106,10 @@
     </div>
 
     <script src="script.js"></script>
+    <!-- AdSense Script -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
 </body>
 </html> 

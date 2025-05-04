@@ -29,8 +29,8 @@ h1 {
 .site-section {
     background: white;
     border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
+    padding: 7.5px;
+    margin-bottom: 0.5rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -87,7 +87,7 @@ h2 {
 .image-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 5px;
 }
 
 .image-container {
@@ -154,8 +154,8 @@ h2 {
 .action-buttons {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    margin-top: 30px;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
     padding: 0 10px;
 }
 
@@ -363,5 +363,114 @@ h2 {
     }
     #pdf-preview-area {
         min-height: 600px;
+    }
+}
+
+/* Ad Container Styles */
+.ad-container {
+    margin: 2.5px 0;
+    padding: 4px;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    min-height: 45px;
+}
+
+/* Responsive ad container */
+@media (max-width: 768px) {
+    .ad-container {
+        margin: 2.5px 0;
+        min-height: 25px;
+    }
+}
+
+/* SEO and Accessibility Improvements */
+header {
+    text-align: center;
+    margin-bottom: 0.25rem;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 1.1rem;
+    margin-top: 0.125rem;
+    margin-bottom: 0.25rem;
+}
+
+main {
+    min-height: 60vh;
+}
+
+footer {
+    margin-top: 1.5rem;
+    padding: 1rem 0;
+    text-align: center;
+    border-top: 1px solid #eee;
+    font-size: 0.9rem;
+}
+
+footer nav {
+    margin: 0.5rem 0;
+}
+
+footer a {
+    color: #2196F3;
+    text-decoration: none;
+    margin: 0 0.5rem;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+.powered-by {
+    color: #666;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+}
+
+/* Improve heading hierarchy */
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+/* Improve image accessibility */
+.image-preview {
+    alt: "Before/After image comparison";
+}
+
+/* Improve button accessibility */
+button {
+    cursor: pointer;
+}
+
+button:focus {
+    outline: 2px solid #2196F3;
+}
+
+/* Improve form accessibility */
+input:focus {
+    outline: 2px solid #2196F3;
+}
+
+/* Improve mobile accessibility */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+        margin: 0.125rem 0;
     }
 } 

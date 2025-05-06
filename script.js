@@ -249,10 +249,6 @@ function handleImageUpload(event, gridId) {
                     gridElement.insertBefore(imageContainer, gridElement.lastElementChild);
                 }
 
-                // Check if the user wants timestamp/location
-                const addTimestamp = document.getElementById('add-timestamp')?.checked;
-                const addLocation = document.getElementById('add-location')?.checked;
-
                 // Detect if the photo is taken with camera (not uploaded from gallery)
                 // We'll use the 'capture' attribute if available, but browsers don't always provide a reliable way
                 // Instead, we can check if the file's lastModified is very recent (within 10 seconds)
@@ -261,12 +257,22 @@ function handleImageUpload(event, gridId) {
 
                 const imgEl = new window.Image();
                 imgEl.onload = function() {
+                    // Check if the user wants timestamp/location
+                    const addTimestamp = document.getElementById('add-timestamp')?.checked;
+                    const addLocation = document.getElementById('add-location')?.checked;
+
+                    // If neither is checked, just show the image as is
+                    if (!addTimestamp && !addLocation) {
+                        drawImageWithWatermark(imgEl, '', false, false);
+                        return;
+                    }
+
+                    // Only fetch location if addLocation is checked
                     if (addLocation && isCameraPhoto && navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
                             (position) => {
                                 const lat = position.coords.latitude;
                                 const lon = position.coords.longitude;
-                                // Use OpenStreetMap Nominatim API for reverse geocoding
                                 fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
                                     .then(response => response.json())
                                     .then(data => {
@@ -274,7 +280,6 @@ function handleImageUpload(event, gridId) {
                                         if (data && data.display_name) {
                                             locationString = data.display_name;
                                         } else if (data && data.address) {
-                                            // Try to build a readable address from components
                                             locationString = [
                                                 data.address.road,
                                                 data.address.neighbourhood,
@@ -286,18 +291,16 @@ function handleImageUpload(event, gridId) {
                                                 data.address.country
                                             ].filter(Boolean).join(', ');
                                         } else {
-                                            locationString = `Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`;
+                                            locationString = '';
                                         }
                                         drawImageWithWatermark(imgEl, locationString, addTimestamp && isCameraPhoto, addLocation && isCameraPhoto);
                                     })
                                     .catch(() => {
-                                        // Fallback to lat/lon if API fails
-                                        drawImageWithWatermark(imgEl, `Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`, addTimestamp && isCameraPhoto, addLocation && isCameraPhoto);
+                                        drawImageWithWatermark(imgEl, '', addTimestamp && isCameraPhoto, addLocation && isCameraPhoto);
                                     });
                             },
                             (error) => {
-                                // If location denied/unavailable, just use date/time if allowed
-                                drawImageWithWatermark(imgEl, '', addTimestamp && isCameraPhoto, false);
+                                drawImageWithWatermark(imgEl, '', addTimestamp && isCameraPhoto, addLocation && isCameraPhoto);
                             },
                             { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
                         );

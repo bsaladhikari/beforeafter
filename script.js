@@ -53,16 +53,18 @@ function handleImageUpload(event, gridId) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 // Helper to draw image with watermark (date/time + location)
-                function drawImageWithWatermark(imgEl, locationString = '') {
+                function drawImageWithWatermark(imgEl, locationString = '', addTimestamp = false, addLocation = false) {
                     const canvas = document.createElement('canvas');
                     canvas.width = imgEl.width;
                     canvas.height = imgEl.height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(imgEl, 0, 0);
 
-                    // Prepare date/time string
-                    const now = new Date();
-                    const dateTimeString = now.toLocaleString();
+                    let dateTimeString = '';
+                    if (addTimestamp) {
+                        const now = new Date();
+                        dateTimeString = now.toLocaleString();
+                    }
 
                     // Set font and style for watermark
                     const fontSize = Math.floor(canvas.width / 20);
@@ -71,24 +73,31 @@ function handleImageUpload(event, gridId) {
                     ctx.textBaseline = 'top';
 
                     // Calculate total height for watermark (date/time + location)
-                    let totalHeight = fontSize + 8;
-                    if (locationString) totalHeight += fontSize;
+                    let totalHeight = 0;
+                    if (addTimestamp) totalHeight += fontSize + 8;
+                    if (addLocation && locationString) totalHeight += fontSize;
 
                     // Draw background for better readability
-                    const textWidth = ctx.measureText(dateTimeString).width;
-                    const locWidth = ctx.measureText(locationString).width;
-                    const maxWidth = Math.max(textWidth, locWidth);
+                    let maxWidth = 0;
+                    if (addTimestamp) maxWidth = ctx.measureText(dateTimeString).width;
+                    if (addLocation && locationString) maxWidth = Math.max(maxWidth, ctx.measureText(locationString).width);
                     const padding = 8;
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-                    ctx.fillRect((canvas.width - maxWidth) / 2 - padding, 0, maxWidth + 2 * padding, totalHeight);
+                    if (totalHeight > 0) {
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                        ctx.fillRect((canvas.width - maxWidth) / 2 - padding, 0, maxWidth + 2 * padding, totalHeight);
+                    }
 
                     // Draw date/time
+                    let y = 4;
                     ctx.fillStyle = 'white';
-                    ctx.fillText(dateTimeString, canvas.width / 2, 4);
+                    if (addTimestamp) {
+                        ctx.fillText(dateTimeString, canvas.width / 2, y);
+                        y += fontSize + 8;
+                    }
                     // Draw location below date/time if available
-                    if (locationString) {
+                    if (addLocation && locationString) {
                         ctx.font = `${fontSize}px Arial`;
-                        ctx.fillText(locationString, canvas.width / 2, fontSize + 8);
+                        ctx.fillText(locationString, canvas.width / 2, y);
                     }
 
                     // Get the new image data URL
@@ -100,6 +109,7 @@ function handleImageUpload(event, gridId) {
                         <img src="${watermarkedDataUrl}" class="image-preview" alt="Preview">
                         <button class="delete-image">×</button>
                     `;
+                    imageContainer.setAttribute('draggable', 'true');
 
                     // Add click event to replace image
                     const img = imageContainer.querySelector('.image-preview');
@@ -126,28 +136,173 @@ function handleImageUpload(event, gridId) {
                         imageContainer.remove();
                     });
 
+                    // Drag and drop events
+                    imageContainer.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', null); // for Firefox
+                        imageContainer.classList.add('dragging');
+                    });
+                    imageContainer.addEventListener('dragend', (e) => {
+                        imageContainer.classList.remove('dragging');
+                    });
+
+                    gridElement.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        const dragging = gridElement.querySelector('.dragging');
+                        const { after, refElement, isFirst, isLast } = getDropPosition(gridElement, e.clientX, e.clientY);
+                        if (isFirst && refElement) {
+                            gridElement.insertBefore(dragging, refElement);
+                        } else if (isLast) {
+                            gridElement.insertBefore(dragging, gridElement.lastElementChild);
+                        } else if (refElement) {
+                            if (after) {
+                                if (refElement.nextSibling) {
+                                    gridElement.insertBefore(dragging, refElement.nextSibling);
+                                } else {
+                                    gridElement.appendChild(dragging);
+                                }
+                            } else {
+                                gridElement.insertBefore(dragging, refElement);
+                            }
+                        } else {
+                            gridElement.insertBefore(dragging, gridElement.lastElementChild);
+                        }
+                    });
+
+                    function getDropPosition(container, x, y) {
+                        const draggableElements = [...container.querySelectorAll('.image-container:not(.dragging)')];
+                        if (draggableElements.length === 0) {
+                            return { after: false, refElement: null, isFirst: false, isLast: true };
+                        }
+                        // Check if cursor is before the first image
+                        const firstBox = draggableElements[0].getBoundingClientRect();
+                        if (x < firstBox.left + firstBox.width / 2 && y < firstBox.bottom + firstBox.height) {
+                            return { after: false, refElement: draggableElements[0], isFirst: true, isLast: false };
+                        }
+                        // Check if cursor is after the last image
+                        const lastBox = draggableElements[draggableElements.length - 1].getBoundingClientRect();
+                        if (x > lastBox.right - lastBox.width / 2 && y > lastBox.top - lastBox.height) {
+                            return { after: false, refElement: null, isFirst: false, isLast: true };
+                        }
+                        // Otherwise, find the closest
+                        let closest = { dist: Number.POSITIVE_INFINITY, after: false, refElement: null };
+                        draggableElements.forEach(child => {
+                            const box = child.getBoundingClientRect();
+                            const centerX = box.left + box.width / 2;
+                            const centerY = box.top + box.height / 2;
+                            const dist = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+                            if (dist < closest.dist) {
+                                closest = {
+                                    dist,
+                                    after: (x > centerX || y > centerY),
+                                    refElement: child
+                                };
+                            }
+                        });
+                        return { ...closest, isFirst: false, isLast: false };
+                    }
+
+                    // Touch support for mobile drag-and-drop
+                    let touchStartY = 0;
+                    let draggingElem = null;
+                    imageContainer.addEventListener('touchstart', (e) => {
+                        if (e.touches.length === 1) {
+                            touchStartY = e.touches[0].clientY;
+                            draggingElem = imageContainer;
+                            setTimeout(() => {
+                                draggingElem.classList.add('dragging');
+                            }, 200); // long press
+                        }
+                    });
+                    imageContainer.addEventListener('touchmove', (e) => {
+                        if (draggingElem && e.touches.length === 1) {
+                            const x = e.touches[0].clientX;
+                            const y = e.touches[0].clientY;
+                            const grid = gridElement;
+                            const { after, refElement, isFirst, isLast } = getDropPosition(grid, x, y);
+                            if (isFirst && refElement) {
+                                grid.insertBefore(draggingElem, refElement);
+                            } else if (isLast) {
+                                grid.insertBefore(draggingElem, grid.lastElementChild);
+                            } else if (refElement) {
+                                if (after) {
+                                    if (refElement.nextSibling) {
+                                        grid.insertBefore(draggingElem, refElement.nextSibling);
+                                    } else {
+                                        grid.appendChild(draggingElem);
+                                    }
+                                } else {
+                                    grid.insertBefore(draggingElem, refElement);
+                                }
+                            } else {
+                                grid.insertBefore(draggingElem, grid.lastElementChild);
+                            }
+                        }
+                    });
+                    imageContainer.addEventListener('touchend', (e) => {
+                        if (draggingElem) {
+                            draggingElem.classList.remove('dragging');
+                            draggingElem = null;
+                        }
+                    });
+
                     gridElement.insertBefore(imageContainer, gridElement.lastElementChild);
                 }
 
-                // Load image and then get location
+                // Check if the user wants timestamp/location
+                const addTimestamp = document.getElementById('add-timestamp')?.checked;
+                const addLocation = document.getElementById('add-location')?.checked;
+
+                // Detect if the photo is taken with camera (not uploaded from gallery)
+                // We'll use the 'capture' attribute if available, but browsers don't always provide a reliable way
+                // Instead, we can check if the file's lastModified is very recent (within 10 seconds)
+                const now = Date.now();
+                const isCameraPhoto = (now - file.lastModified < 10000); // 10 seconds
+
                 const imgEl = new window.Image();
                 imgEl.onload = function() {
-                    if (navigator.geolocation) {
+                    if (addLocation && isCameraPhoto && navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
                             (position) => {
-                                const lat = position.coords.latitude.toFixed(5);
-                                const lon = position.coords.longitude.toFixed(5);
-                                const locationString = `Lat: ${lat}, Lon: ${lon}`;
-                                drawImageWithWatermark(imgEl, locationString);
+                                const lat = position.coords.latitude;
+                                const lon = position.coords.longitude;
+                                // Use OpenStreetMap Nominatim API for reverse geocoding
+                                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        let locationString = '';
+                                        if (data && data.display_name) {
+                                            locationString = data.display_name;
+                                        } else if (data && data.address) {
+                                            // Try to build a readable address from components
+                                            locationString = [
+                                                data.address.road,
+                                                data.address.neighbourhood,
+                                                data.address.suburb,
+                                                data.address.city,
+                                                data.address.town,
+                                                data.address.village,
+                                                data.address.state,
+                                                data.address.country
+                                            ].filter(Boolean).join(', ');
+                                        } else {
+                                            locationString = `Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`;
+                                        }
+                                        drawImageWithWatermark(imgEl, locationString, addTimestamp && isCameraPhoto, addLocation && isCameraPhoto);
+                                    })
+                                    .catch(() => {
+                                        // Fallback to lat/lon if API fails
+                                        drawImageWithWatermark(imgEl, `Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`, addTimestamp && isCameraPhoto, addLocation && isCameraPhoto);
+                                    });
                             },
                             (error) => {
-                                // If location denied/unavailable, just use date/time
-                                drawImageWithWatermark(imgEl, '');
+                                // If location denied/unavailable, just use date/time if allowed
+                                drawImageWithWatermark(imgEl, '', addTimestamp && isCameraPhoto, false);
                             },
                             { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
                         );
                     } else {
-                        drawImageWithWatermark(imgEl, '');
+                        drawImageWithWatermark(imgEl, '', addTimestamp && isCameraPhoto, false);
                     }
                 };
                 imgEl.src = e.target.result;

@@ -42,7 +42,18 @@
             <h1>Before & After Image Report Generator</h1>
             <p class="subtitle">Create professional comparison reports for your projects</p>
         </header>
-        
+        <div class="photo-options" style="margin: 10px 0 0 0; padding: 10px 0; display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+            <div style="display: flex; flex-direction: row; gap: 24px; align-items: center;">
+                <label><input type="checkbox" id="add-timestamp"> Add Timestamp to Photos</label>
+                <label><input type="checkbox" id="add-location"> Add Location to Photos</label>
+            </div>
+            <div class="photo-info-message" style="font-size: 14px; color: #555; margin-top: 6px;">
+                Timestamps and locations can only be added to photos taken with your device's camera, not to photos uploaded from your gallery. You can choose to add these details using the options above. You can also reorder your photos by dragging them.
+            </div>
+            <div class="photo-warning-message" style="font-size: 14px; color: #b71c1c; margin-top: 4px;">
+                <strong>Warning:</strong> Refreshing or closing the browser will erase all uploaded images and data. We do not store anything on our servers.
+            </div>
+        </div>
         <main>
             <div id="sites-container">
                 <div class="site-section">
@@ -55,7 +66,7 @@
                             <h2>Before Images</h2>
                             <div class="image-grid" id="before-grid-1">
                                 <div class="image-upload-container">
-                                    <input type="file" accept="image/*"  class="image-upload">
+                                    <input type="file" accept="image/*" multiple class="image-upload">
                                     <button class="add-image">+ Add</button>
                                 </div>
                             </div>
@@ -64,7 +75,7 @@
                             <h2>After Images</h2>
                             <div class="image-grid" id="after-grid-1">
                                 <div class="image-upload-container">
-                                    <input type="file" accept="image/*"  class="image-upload">
+                                    <input type="file" accept="image/*" multiple class="image-upload">
                                     <button class="add-image">+ Add</button>
                                 </div>
                             </div>

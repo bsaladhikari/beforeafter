@@ -72,15 +72,45 @@ function handleImageUpload(event, gridId) {
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'top';
 
+                    // Helper to wrap text
+                    function wrapText(text, maxWidth) {
+                        if (!text) return [];
+                        const words = text.split(' ');
+                        let lines = [];
+                        let line = '';
+                        for (let n = 0; n < words.length; n++) {
+                            const testLine = line + words[n] + ' ';
+                            const metrics = ctx.measureText(testLine);
+                            const testWidth = metrics.width;
+                            if (testWidth > maxWidth && n > 0) {
+                                lines.push(line.trim());
+                                line = words[n] + ' ';
+                            } else {
+                                line = testLine;
+                            }
+                        }
+                        lines.push(line.trim());
+                        return lines;
+                    }
+
                     // Calculate total height for watermark (date/time + location)
                     let totalHeight = 0;
+                    let locationLines = [];
+                    const maxTextWidth = canvas.width * 0.9;
                     if (addTimestamp) totalHeight += fontSize + 8;
-                    if (addLocation && locationString) totalHeight += fontSize;
+                    if (addLocation && locationString) {
+                        locationLines = wrapText(locationString, maxTextWidth);
+                        totalHeight += locationLines.length * fontSize;
+                    }
 
                     // Draw background for better readability
                     let maxWidth = 0;
                     if (addTimestamp) maxWidth = ctx.measureText(dateTimeString).width;
-                    if (addLocation && locationString) maxWidth = Math.max(maxWidth, ctx.measureText(locationString).width);
+                    if (addLocation && locationLines.length > 0) {
+                        locationLines.forEach(line => {
+                            maxWidth = Math.max(maxWidth, ctx.measureText(line).width);
+                        });
+                    }
                     const padding = 8;
                     if (totalHeight > 0) {
                         ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
@@ -95,9 +125,12 @@ function handleImageUpload(event, gridId) {
                         y += fontSize + 8;
                     }
                     // Draw location below date/time if available
-                    if (addLocation && locationString) {
+                    if (addLocation && locationLines.length > 0) {
                         ctx.font = `${fontSize}px Arial`;
-                        ctx.fillText(locationString, canvas.width / 2, y);
+                        locationLines.forEach(line => {
+                            ctx.fillText(line, canvas.width / 2, y);
+                            y += fontSize;
+                        });
                     }
 
                     // Get the new image data URL

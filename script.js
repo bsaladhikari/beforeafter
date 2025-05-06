@@ -52,97 +52,17 @@ function handleImageUpload(event, gridId) {
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                // Helper to draw image with watermark (date/time + location)
-                function drawImageWithWatermark(imgEl, locationString = '', addTimestamp = false, addLocation = false) {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = imgEl.width;
-                    canvas.height = imgEl.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(imgEl, 0, 0);
-
-                    let dateTimeString = '';
-                    if (addTimestamp) {
-                        const now = new Date();
-                        dateTimeString = now.toLocaleString();
-                    }
-
-                    // Set font and style for watermark
-                    const fontSize = Math.floor(canvas.width / 20);
-                    ctx.font = `bold ${fontSize}px Arial`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'top';
-
-                    // Helper to wrap text
-                    function wrapText(text, maxWidth) {
-                        if (!text) return [];
-                        const words = text.split(' ');
-                        let lines = [];
-                        let line = '';
-                        for (let n = 0; n < words.length; n++) {
-                            const testLine = line + words[n] + ' ';
-                            const metrics = ctx.measureText(testLine);
-                            const testWidth = metrics.width;
-                            if (testWidth > maxWidth && n > 0) {
-                                lines.push(line.trim());
-                                line = words[n] + ' ';
-                            } else {
-                                line = testLine;
-                            }
-                        }
-                        lines.push(line.trim());
-                        return lines;
-                    }
-
-                    // Calculate total height for watermark (date/time + location)
-                    let totalHeight = 0;
-                    let locationLines = [];
-                    const maxTextWidth = canvas.width * 0.9;
-                    if (addTimestamp) totalHeight += fontSize + 8;
-                    if (addLocation && locationString) {
-                        locationLines = wrapText(locationString, maxTextWidth);
-                        totalHeight += locationLines.length * fontSize;
-                    }
-
-                    // Draw background for better readability
-                    let maxWidth = 0;
-                    if (addTimestamp) maxWidth = ctx.measureText(dateTimeString).width;
-                    if (addLocation && locationLines.length > 0) {
-                        locationLines.forEach(line => {
-                            maxWidth = Math.max(maxWidth, ctx.measureText(line).width);
-                        });
-                    }
-                    const padding = 8;
-                    if (totalHeight > 0) {
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-                        ctx.fillRect((canvas.width - maxWidth) / 2 - padding, 0, maxWidth + 2 * padding, totalHeight);
-                    }
-
-                    // Draw date/time
-                    let y = 4;
-                    ctx.fillStyle = 'white';
-                    if (addTimestamp) {
-                        ctx.fillText(dateTimeString, canvas.width / 2, y);
-                        y += fontSize + 8;
-                    }
-                    // Draw location below date/time if available
-                    if (addLocation && locationLines.length > 0) {
-                        ctx.font = `${fontSize}px Arial`;
-                        locationLines.forEach(line => {
-                            ctx.fillText(line, canvas.width / 2, y);
-                            y += fontSize;
-                        });
-                    }
-
-                    // Get the new image data URL
-                    const watermarkedDataUrl = canvas.toDataURL('image/jpeg');
-
+                const originalDataUrl = e.target.result;
+                const imgEl = new window.Image();
+                imgEl.onload = function() {
                     const imageContainer = document.createElement('div');
                     imageContainer.className = 'image-container';
                     imageContainer.innerHTML = `
-                        <img src="${watermarkedDataUrl}" class="image-preview" alt="Preview">
+                        <img src="${originalDataUrl}" class="image-preview" alt="Preview">
                         <button class="delete-image">×</button>
                     `;
                     imageContainer.setAttribute('draggable', 'true');
+                    imageContainer.dataset.original = originalDataUrl;
 
                     // Add click event to replace image
                     const img = imageContainer.querySelector('.image-preview');
@@ -156,6 +76,7 @@ function handleImageUpload(event, gridId) {
                                 const newReader = new FileReader();
                                 newReader.onload = (e) => {
                                     img.src = e.target.result;
+                                    imageContainer.dataset.original = e.target.result;
                                 };
                                 newReader.readAsDataURL(newFile);
                             }
@@ -280,71 +201,115 @@ function handleImageUpload(event, gridId) {
                     });
 
                     gridElement.insertBefore(imageContainer, gridElement.lastElementChild);
-                }
-
-                // Detect if the photo is taken with camera (not uploaded from gallery)
-                // We'll use the 'capture' attribute if available, but browsers don't always provide a reliable way
-                // Instead, we can check if the file's lastModified is very recent (within 10 seconds)
-                const now = Date.now();
-                const isCameraPhoto = (now - file.lastModified < 10000); // 10 seconds
-
-                const imgEl = new window.Image();
-                imgEl.onload = function() {
-                    // Check if the user wants timestamp/location
-                    const addTimestamp = document.getElementById('add-timestamp')?.checked;
-                    const addLocation = document.getElementById('add-location')?.checked;
-
-                    // If neither is checked, just show the image as is
-                    if (!addTimestamp && !addLocation) {
-                        drawImageWithWatermark(imgEl, '', false, false);
-                        return;
-                    }
-
-                    // Only fetch location if addLocation is checked
-                    if (addLocation && isCameraPhoto && navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                const lat = position.coords.latitude;
-                                const lon = position.coords.longitude;
-                                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        let locationString = '';
-                                        if (data && data.display_name) {
-                                            locationString = data.display_name;
-                                        } else if (data && data.address) {
-                                            locationString = [
-                                                data.address.road,
-                                                data.address.neighbourhood,
-                                                data.address.suburb,
-                                                data.address.city,
-                                                data.address.town,
-                                                data.address.village,
-                                                data.address.state,
-                                                data.address.country
-                                            ].filter(Boolean).join(', ');
-                                        } else {
-                                            locationString = '';
-                                        }
-                                        drawImageWithWatermark(imgEl, locationString, addTimestamp && isCameraPhoto, addLocation && isCameraPhoto);
-                                    })
-                                    .catch(() => {
-                                        drawImageWithWatermark(imgEl, '', addTimestamp && isCameraPhoto, addLocation && isCameraPhoto);
-                                    });
-                            },
-                            (error) => {
-                                drawImageWithWatermark(imgEl, '', addTimestamp && isCameraPhoto, addLocation && isCameraPhoto);
-                            },
-                            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-                        );
-                    } else {
-                        drawImageWithWatermark(imgEl, '', addTimestamp && isCameraPhoto, false);
-                    }
                 };
-                imgEl.src = e.target.result;
+                imgEl.src = originalDataUrl;
             };
             reader.readAsDataURL(file);
         }
+    });
+}
+
+// Helper to draw image with watermark (timestamp/location) for PDF/preview
+async function getImageWithOverlay(originalDataUrl, addTimestamp, addLocation) {
+    return new Promise((resolve) => {
+        const imgEl = new window.Image();
+        imgEl.onload = async function() {
+            let locationString = '';
+            if (addLocation && navigator.geolocation) {
+                try {
+                    const pos = await new Promise((res, rej) => {
+                        navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
+                    });
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                    const data = await resp.json();
+                    if (data && data.display_name) {
+                        locationString = data.display_name;
+                    } else if (data && data.address) {
+                        locationString = [
+                            data.address.road,
+                            data.address.neighbourhood,
+                            data.address.suburb,
+                            data.address.city,
+                            data.address.town,
+                            data.address.village,
+                            data.address.state,
+                            data.address.country
+                        ].filter(Boolean).join(', ');
+                    }
+                } catch {}
+            }
+            // Use the same drawImageWithWatermark logic, but return the dataUrl
+            const canvas = document.createElement('canvas');
+            canvas.width = imgEl.width;
+            canvas.height = imgEl.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imgEl, 0, 0);
+            let dateTimeString = '';
+            if (addTimestamp) {
+                const now = new Date();
+                dateTimeString = now.toLocaleString();
+            }
+            const fontSize = Math.floor(canvas.width / 20);
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            function wrapText(text, maxWidth) {
+                if (!text) return [];
+                const words = text.split(' ');
+                let lines = [];
+                let line = '';
+                for (let n = 0; n < words.length; n++) {
+                    const testLine = line + words[n] + ' ';
+                    const metrics = ctx.measureText(testLine);
+                    const testWidth = metrics.width;
+                    if (testWidth > maxWidth && n > 0) {
+                        lines.push(line.trim());
+                        line = words[n] + ' ';
+                    } else {
+                        line = testLine;
+                    }
+                }
+                lines.push(line.trim());
+                return lines;
+            }
+            let totalHeight = 0;
+            let locationLines = [];
+            const maxTextWidth = canvas.width * 0.9;
+            if (addTimestamp) totalHeight += fontSize + 8;
+            if (addLocation && locationString) {
+                locationLines = wrapText(locationString, maxTextWidth);
+                totalHeight += locationLines.length * fontSize;
+            }
+            let maxWidth = 0;
+            if (addTimestamp) maxWidth = ctx.measureText(dateTimeString).width;
+            if (addLocation && locationLines.length > 0) {
+                locationLines.forEach(line => {
+                    maxWidth = Math.max(maxWidth, ctx.measureText(line).width);
+                });
+            }
+            const padding = 8;
+            if (totalHeight > 0) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.fillRect((canvas.width - maxWidth) / 2 - padding, 0, maxWidth + 2 * padding, totalHeight);
+            }
+            let y = 4;
+            ctx.fillStyle = 'white';
+            if (addTimestamp) {
+                ctx.fillText(dateTimeString, canvas.width / 2, y);
+                y += fontSize + 8;
+            }
+            if (addLocation && locationLines.length > 0) {
+                ctx.font = `${fontSize}px Arial`;
+                locationLines.forEach(line => {
+                    ctx.fillText(line, canvas.width / 2, y);
+                    y += fontSize;
+                });
+            }
+            resolve(canvas.toDataURL('image/jpeg'));
+        };
+        imgEl.src = originalDataUrl;
     });
 }
 
@@ -382,7 +347,7 @@ function showPdfNameModal(onDownload) {
 }
 
 // Update generateAllPDFs to show all 'Before' images first in a 3-column grid, then all 'After' images in a 3-column grid, with section headers. This works for both desktop and mobile.
-function generateAllPDFs(fileName = 'all_sites_report.pdf') {
+async function generateAllPDFs(fileName = 'all_sites_report.pdf') {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 10;
@@ -392,7 +357,13 @@ function generateAllPDFs(fileName = 'all_sites_report.pdf') {
     const imageHeight = imageWidth * 0.78;
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    document.querySelectorAll('.site-section').forEach((siteSection, index) => {
+    // Get current options
+    const addTimestamp = document.getElementById('add-timestamp')?.checked;
+    const addLocation = document.getElementById('add-location')?.checked;
+
+    const siteSections = document.querySelectorAll('.site-section');
+    for (let index = 0; index < siteSections.length; index++) {
+        const siteSection = siteSections[index];
         if (index > 0) {
             doc.addPage();
         }
@@ -400,10 +371,10 @@ function generateAllPDFs(fileName = 'all_sites_report.pdf') {
         const siteName = siteSection.querySelector('.site-name').value || 'Unnamed Site';
         const beforeImages = Array.from(siteSection.querySelectorAll('.image-preview')).filter(img => 
             img.closest('.before-section')
-        ).map(img => img.src);
+        ).map(img => img.closest('.image-container').dataset.original);
         const afterImages = Array.from(siteSection.querySelectorAll('.image-preview')).filter(img => 
             img.closest('.after-section')
-        ).map(img => img.src);
+        ).map(img => img.closest('.image-container').dataset.original);
 
         // Add site name (centered, bold, large)
         doc.setFontSize(24);
@@ -416,7 +387,8 @@ function generateAllPDFs(fileName = 'all_sites_report.pdf') {
         doc.text('Before', pageWidth / 2, 32, { align: 'center' });
         let y = 38;
         let x = margin;
-        beforeImages.forEach((img, i) => {
+        for (let i = 0; i < beforeImages.length; i++) {
+            const img = await getImageWithOverlay(beforeImages[i], addTimestamp, addLocation);
             if (x + imageWidth > pageWidth - margin + 1e-2) {
                 x = margin;
                 y += imageHeight + spacing;
@@ -434,7 +406,7 @@ function generateAllPDFs(fileName = 'all_sites_report.pdf') {
             }
             doc.addImage(img, 'JPEG', x, y, imageWidth, imageHeight);
             x += imageWidth + spacing;
-        });
+        }
 
         // AFTER SECTION HEADER (centered, styled)
         y += imageHeight + spacing * 2 + 18;
@@ -442,7 +414,8 @@ function generateAllPDFs(fileName = 'all_sites_report.pdf') {
         doc.setFontSize(18);
         doc.setFont(undefined, 'bold');
         doc.text('After', pageWidth / 2, y - spacing, { align: 'center' });
-        afterImages.forEach((img, i) => {
+        for (let i = 0; i < afterImages.length; i++) {
+            const img = await getImageWithOverlay(afterImages[i], addTimestamp, addLocation);
             if (x + imageWidth > pageWidth - margin + 1e-2) {
                 x = margin;
                 y += imageHeight + spacing;
@@ -460,14 +433,13 @@ function generateAllPDFs(fileName = 'all_sites_report.pdf') {
             }
             doc.addImage(img, 'JPEG', x, y, imageWidth, imageHeight);
             x += imageWidth + spacing;
-        });
-    });
-
+        }
+    }
     doc.save(fileName);
 }
 
 // Update previewAllPDFs to match the new design
-function previewAllPDFs() {
+async function previewAllPDFs() {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 10;
@@ -477,7 +449,13 @@ function previewAllPDFs() {
     const imageHeight = imageWidth * 0.78;
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    document.querySelectorAll('.site-section').forEach((siteSection, index) => {
+    // Get current options
+    const addTimestamp = document.getElementById('add-timestamp')?.checked;
+    const addLocation = document.getElementById('add-location')?.checked;
+
+    const siteSections = document.querySelectorAll('.site-section');
+    for (let index = 0; index < siteSections.length; index++) {
+        const siteSection = siteSections[index];
         if (index > 0) {
             doc.addPage();
         }
@@ -485,10 +463,10 @@ function previewAllPDFs() {
         const siteName = siteSection.querySelector('.site-name').value || 'Unnamed Site';
         const beforeImages = Array.from(siteSection.querySelectorAll('.image-preview')).filter(img => 
             img.closest('.before-section')
-        ).map(img => img.src);
+        ).map(img => img.closest('.image-container').dataset.original);
         const afterImages = Array.from(siteSection.querySelectorAll('.image-preview')).filter(img => 
             img.closest('.after-section')
-        ).map(img => img.src);
+        ).map(img => img.closest('.image-container').dataset.original);
 
         // Add site name (centered, bold, large)
         doc.setFontSize(24);
@@ -501,7 +479,8 @@ function previewAllPDFs() {
         doc.text('Before', pageWidth / 2, 32, { align: 'center' });
         let y = 38;
         let x = margin;
-        beforeImages.forEach((img, i) => {
+        for (let i = 0; i < beforeImages.length; i++) {
+            const img = await getImageWithOverlay(beforeImages[i], addTimestamp, addLocation);
             if (x + imageWidth > pageWidth - margin + 1e-2) {
                 x = margin;
                 y += imageHeight + spacing;
@@ -519,7 +498,7 @@ function previewAllPDFs() {
             }
             doc.addImage(img, 'JPEG', x, y, imageWidth, imageHeight);
             x += imageWidth + spacing;
-        });
+        }
 
         // AFTER SECTION HEADER (centered, styled)
         y += imageHeight + spacing * 2 + 18;
@@ -527,7 +506,8 @@ function previewAllPDFs() {
         doc.setFontSize(18);
         doc.setFont(undefined, 'bold');
         doc.text('After', pageWidth / 2, y - spacing, { align: 'center' });
-        afterImages.forEach((img, i) => {
+        for (let i = 0; i < afterImages.length; i++) {
+            const img = await getImageWithOverlay(afterImages[i], addTimestamp, addLocation);
             if (x + imageWidth > pageWidth - margin + 1e-2) {
                 x = margin;
                 y += imageHeight + spacing;
@@ -545,9 +525,8 @@ function previewAllPDFs() {
             }
             doc.addImage(img, 'JPEG', x, y, imageWidth, imageHeight);
             x += imageWidth + spacing;
-        });
-    });
-
+        }
+    }
     // Show PDF in preview area
     const pdfBlob = doc.output('blob');
     const url = URL.createObjectURL(pdfBlob);

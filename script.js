@@ -545,11 +545,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Generate PDF for all sites
     document.getElementById('generate-all-pdf').addEventListener('click', () => {
+        // Track PDF generation click
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'generate_pdf_click', {
+                'event_category': 'PDF',
+                'event_label': 'Generate PDF Button'
+            });
+        }
         showPdfNameModal((fileName) => generateAllPDFs(fileName));
     });
 
     // Preview PDF for all sites
-    document.getElementById('preview-pdf').addEventListener('click', previewAllPDFs);
+    document.getElementById('preview-pdf').addEventListener('click', () => {
+        // Track preview click
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'preview_pdf_click', {
+                'event_category': 'PDF',
+                'event_label': 'Preview PDF Button'
+            });
+        }
+        previewAllPDFs();
+    });
 
     // Setup initial site
     setupSiteEventListeners(document.querySelector('.site-section'));
